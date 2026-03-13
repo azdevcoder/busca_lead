@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Busca Lead</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        body { background-color: #0f172a; color: #f1f5f9; font-family: sans-serif; }
+        .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .gradient-text { background: linear-gradient(90deg, #3b82f6, #2dd4bf); background-clip: text; -webkit-text-fill-color: transparent; }
+        table.dataTable tbody tr { background-color: #1e293b !important; color: #e2e8f0 !important; border-bottom: 1px solid #334155 !important; }
+        .dataTables_wrapper { color: #94a3b8 !important; }
+        .star-gold { color: #fbbf24; }
+        .star-gray { color: #334155; }
+        select option { background-color: #1e293b; color: white; }
+    </style>
+</head>
+<body class="p-4 md:p-10">
+
+    <div class="max-w-6xl mx-auto">
+        <header class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-black gradient-text">BUSCA LEAD</h1>
+            <button onclick="location.reload()" class="text-xs font-bold text-slate-500 border border-slate-800 px-4 py-2 rounded-lg hover:bg-slate-800">Reiniciar</button>
+        </header>
+
+        <div class="glass-card p-6 rounded-2xl mb-6">
+            <div class="flex flex-col md:flex-row gap-4 items-end">
+                <div class="flex-grow w-full text-black">
+                    <label class="block text-xs font-bold text-slate-500 mb-2 uppercase text-white">O que você busca?</label>
+                    <input type="text" id="searchInput" placeholder="Ex: Academias em São Paulo" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-white outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="w-full md:w-32">
+                    <label class="block text-xs font-bold text-slate-500 mb-2 uppercase">Qtd.</label>
+                    <select id="limitSelect" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-white outline-none">
+                        <option value="10">10</option>
+                        <option value="20">20</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                </div>
+                <button id="btnBuscar" onclick="buscarLeads()" class="w-full md:w-auto bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-10 rounded-xl transition-all">
+                    Extrair Leads
+                </button>
+            </div>
+
+            <div id="progressWrapper" class="hidden mt-6">
+                <div class="flex justify-between text-[10px] font-bold text-blue-400 mb-2 uppercase">
+                    <span id="progressStatus">Iniciando...</span>
+                    <span id="progressPercent">0%</span>
+                </div>
+                <div class="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                    <div id="progressBar" class="bg-blue-500 h-full w-0 transition-all duration-300"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="glass-card rounded-2xl overflow-hidden hidden" id="tabelaContainer">
+            <div class="p-5 border-b border-slate-700 flex justify-between items-center bg-slate-800/30">
+                <h2 class="font-bold">Leads Qualificados</h2>
+                <button onclick="exportarExcel()" class="bg-emerald-600 text-white py-2 px-5 rounded-lg text-sm font-bold">📥 Excel</button>
+            </div>
+            <div class="p-4">
+                <table id="tabelaLeads" class="display w-full">
+                    <thead>
+                        <tr>
+                            <th>Qualidade</th>
+                            <th>Empresa</th>
+                            <th>WhatsApp</th>
+                            <th>E-mail</th>
+                            <th>Site</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let table = $('#tabelaLeads').DataTable({
+            language: { url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/pt-BR.json' },
+            order: [[0, 'desc']]
+        });
+        let leadsAtuais = [];
+
+        async function buscarLeads() {
+            const query = document.getElementById('searchInput').value;
+            const limit = parseInt(document.getElementById('limitSelect').value);
+            if(!query) return alert("Digite algo!");
+
+            const btn = document.getElementById('btnBuscar');
+            const wrapper = document.getElementById('progressWrapper');
+            const bar = document.getElementById('progressBar');
+            const status = document.getElementById('progressStatus');
+            const percent = document.getElementById('progressPercent');
+
+            btn.disabled = true;
+            wrapper.classList.remove('hidden');
+            $('#tabelaContainer').addClass('hidden');
+
+            // Simulação de Progresso
+            let current = 0;
+            const timer = setInterval(() => {
+                if(current < 95) {
+                    current += (100 / (limit * 1.5));
+                    if(current > 95) current = 95;
+                    bar.style.width = current + "%";
+                    percent.innerText = Math.floor(current) + "%";
+                    status.innerText = current < 40 ? "Buscando..." : "Extraindo contatos...";
+                }
+            }, 600);
+
+            try {
+                const response = await fetch('http://127.0.0.1:8000/buscar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query: query, limit: limit })
+                });
+                leadsAtuais = await response.json();
+                
+                clearInterval(timer);
+                bar.style.width = "100%";
+                percent.innerText = "100%";
+                status.innerText = "Finalizado!";
+
+                setTimeout(() => {
+                    renderizarTabela();
+                    wrapper.classList.add('hidden');
+                    $('#tabelaContainer').removeClass('hidden');
+                    btn.disabled = false;
+                }, 500);
+
+            } catch (err) {
+                clearInterval(timer);
+                alert("Erro no servidor!");
+                btn.disabled = false;
+            }
+        }
+
+        function renderizarTabela() {
+            table.clear();
+            leadsAtuais.forEach((lead, index) => {
+                let stars = `<span class="hidden">${lead.score}</span><div class="flex gap-1">`;
+                for(let i=1; i<=3; i++) {
+                    stars += `<span class="${i <= lead.score ? 'star-gold' : 'star-gray'} text-lg">★</span>`;
+                }
+                stars += `</div>`;
+
+                const cleanTel = lead.telefone.replace(/\D/g, '');
+                const zap = lead.telefone !== "N/A" ? `<a href="https://wa.me/55${cleanTel}" target="_blank" class="text-emerald-400 font-bold underline">${lead.telefone}</a>` : "N/A";
+
+                table.row.add([
+                    stars,
+                    `<span class="text-white font-bold">${lead.nome}</span>`,
+                    zap,
+                    `<span class="text-blue-300 text-xs">${lead.email}</span>`,
+                    lead.site ? `<a href="${lead.site}" target="_blank" class="text-slate-400 underline text-xs">Abrir</a>` : "N/A",
+                    `<button onclick="removerLead(${index})" class="text-red-500 font-bold">EXCLUIR</button>`
+                ]);
+            });
+            table.draw();
+        }
+
+        function removerLead(i) {
+            leadsAtuais.splice(i, 1);
+            renderizarTabela();
+        }
+
+        function exportarExcel() {
+            const ws = XLSX.utils.json_to_sheet(leadsAtuais);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Leads");
+            XLSX.writeFile(wb, "Leads_Search.xlsx");
+        }
+    </script>
+</body>
+</html>
