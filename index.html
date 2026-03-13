@@ -2,91 +2,66 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Busca Leads Pro</title>
-    
+    <title>Busca Leads Híbrido</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-
     <style>
-        body { background-color: #0b0f1a; color: #f1f5f9; font-family: 'Inter', sans-serif; }
-        .glass-card { background: rgba(17, 24, 39, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); }
-        .gradient-text { background: linear-gradient(90deg, #3b82f6, #2dd4bf); background-clip: text; -webkit-text-fill-color: transparent; }
-        .dataTables_wrapper .dataTables_length, .dataTables_wrapper .dataTables_filter, .dataTables_wrapper .dataTables_info, .dataTables_wrapper .dataTables_paginate { color: #94a3b8 !important; }
-        table.dataTable tbody tr { background-color: transparent !important; color: #e2e8f0 !important; border-bottom: 1px solid #1e293b !important; }
-        table.dataTable thead th { background-color: #1e293b !important; color: #94a3b8 !important; text-transform: uppercase; font-size: 10px; letter-spacing: 0.05em; }
+        body { background: #0b0f1a; color: #f1f5f9; font-family: 'Inter', sans-serif; }
+        .glass-card { background: rgba(17, 24, 39, 0.8); backdrop-filter: blur(10px); border: 1px solid #1e293b; border-radius: 20px; }
         .star-gold { color: #fbbf24; }
-        .star-gray { color: #2d3748; }
-        .btn-trash:hover { color: #ef4444; transform: scale(1.2); transition: all 0.2s; }
+        table.dataTable tbody tr { background: transparent !important; color: #cbd5e1 !important; border-bottom: 1px solid #1e293b !important; }
     </style>
 </head>
-<body class="p-6 md:p-12">
-
+<body class="p-10">
     <div class="max-w-6xl mx-auto">
         <header class="flex justify-between items-center mb-10">
-            <div>
-                <h1 class="text-4xl font-black gradient-text tracking-tighter">BUSCA LEADS</h1>
-                <p class="text-slate-500 text-sm font-medium">Extração Inteligente & Validação</p>
-            </div>
-            <button onclick="location.reload()" class="bg-slate-900 border border-slate-800 text-slate-400 hover:text-white px-4 py-2 rounded-xl text-xs font-bold transition-all">
-                PESQUISAR NOVAMENTE
-            </button>
+            <h1 class="text-3xl font-black text-white italic">LEAD<span class="text-blue-500">PRO</span> HÍBRIDO</h1>
+            <button onclick="location.reload()" class="text-xs text-slate-500 hover:text-white uppercase font-bold">Reiniciar Sistema</button>
         </header>
 
-        <div class="glass-card p-8 rounded-3xl mb-10">
-            <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-end">
-                <div class="md:col-span-7">
-                    <label class="block text-[10px] font-bold text-slate-400 mb-3 uppercase tracking-widest">Atividade e Localização</label>
-                    <input type="text" id="searchInput" placeholder="Ex: Contabilidade em São Paulo" class="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-white outline-none">
+        <div class="glass-card p-8 mb-8">
+            <div class="flex flex-col md:flex-row gap-4 items-end">
+                <div class="flex-1">
+                    <label class="block text-[10px] font-bold text-slate-500 mb-2 uppercase">Busca no Google Maps</label>
+                    <input type="text" id="searchInput" placeholder="O que você procura?" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-white outline-none focus:border-blue-500">
                 </div>
-                <div class="md:col-span-2">
-                    <label class="block text-[10px] font-bold text-slate-400 mb-3 uppercase tracking-widest">Quantidade</label>
-                    <select id="limitSelect" class="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-white outline-none">
+                <div class="w-32">
+                    <label class="block text-[10px] font-bold text-slate-500 mb-2 uppercase">Qtd</label>
+                    <select id="limitSelect" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-white">
                         <option value="10">10</option>
                         <option value="50">50</option>
-                        <option value="100">100</option>
                     </select>
                 </div>
-                <div class="md:col-span-3">
-                    <button id="btnBuscar" onclick="buscarLeads()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-extrabold py-4 rounded-2xl transition-all shadow-lg active:scale-95">
-                        INICIAR CONSULTA
-                    </button>
-                </div>
+                <button id="btnBuscar" onclick="buscar()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-10 py-4 rounded-xl transition-all">
+                    INICIAR BUSCA
+                </button>
             </div>
 
-            <div id="progressWrapper" class="hidden mt-10">
-                <div class="flex justify-between items-end mb-3">
-                    <span id="progressStatus" class="text-blue-400 text-[10px] font-bold uppercase">Processando no Servidor...</span>
-                    <span id="progressPercent" class="text-2xl font-black text-white">0%</span>
+            <div id="statusArea" class="hidden mt-6">
+                <div class="w-full bg-slate-900 h-1 rounded-full overflow-hidden">
+                    <div id="progBar" class="bg-blue-500 h-full w-0 transition-all duration-500"></div>
                 </div>
-                <div class="w-full bg-slate-950 rounded-full h-3 p-1 border border-slate-800">
-                    <div id="progressBar" class="bg-blue-500 h-full rounded-full w-0 transition-all duration-500"></div>
-                </div>
+                <p id="statusMsg" class="text-[10px] text-blue-400 mt-2 font-bold uppercase tracking-widest">Aguardando comando...</p>
             </div>
         </div>
 
-        <div class="glass-card rounded-3xl overflow-hidden hidden" id="tabelaContainer">
-            <div class="p-6 border-b border-slate-800 flex justify-between items-center bg-slate-900/30">
-                <h2 class="font-bold text-slate-200">Leads Encontrados</h2>
-                <button onclick="exportarExcel()" class="bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 px-6 rounded-xl text-xs font-bold transition-all">
-                    EXPORTAR EXCEL
-                </button>
+        <div id="containerTabela" class="glass-card hidden overflow-hidden">
+            <div class="p-6 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
+                <h2 class="font-bold text-sm uppercase tracking-tighter text-slate-300">Leads Encontrados e Enriquecidos</h2>
+                <button onclick="exportar()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-2 rounded-lg font-bold text-xs">EXPORTAR EXCEL</button>
             </div>
             <div class="p-6">
-                <table id="tabelaLeads" class="display w-full">
+                <table id="tabela" class="w-full">
                     <thead>
-                        <tr>
+                        <tr class="text-left text-slate-500 text-[10px] uppercase">
                             <th>Qualidade</th>
                             <th>Empresa</th>
                             <th>WhatsApp</th>
-                            <th>Site</th>
                             <th>UF</th>
-                            <th>E-mail</th>
-                            <th>Ações</th>
+                            <th>E-mail (API)</th>
                         </tr>
                     </thead>
                     <tbody></tbody>
@@ -96,91 +71,54 @@
     </div>
 
     <script>
-        let table = $('#tabelaLeads').DataTable({
-            language: { url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/pt-BR.json' },
-            order: [[0, 'desc']]
-        });
-        let leadsAtuais = [];
+        let dt = $('#tabela').DataTable({ language: { url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/pt-BR.json' } });
+        let leads = [];
 
-        async function buscarLeads() {
-            const query = document.getElementById('searchInput').value;
-            const limit = parseInt(document.getElementById('limitSelect').value);
-            if(!query) return alert("Digite o que deseja buscar!");
+        async function buscar() {
+            const query = $('#searchInput').val();
+            if(!query) return;
 
-            const btn = document.getElementById('btnBuscar');
-            const wrapper = document.getElementById('progressWrapper');
-            const bar = document.getElementById('progressBar');
-            const percent = document.getElementById('progressPercent');
-
-            btn.disabled = true;
-            btn.innerText = "CAPTURANDO...";
-            wrapper.classList.remove('hidden');
-            bar.style.width = "30%";
-            percent.innerText = "30%";
+            $('#btnBuscar').prop('disabled', true).text("CAPTURANDO...");
+            $('#statusArea').removeClass('hidden');
+            $('#statusMsg').text("Abrindo Maps e consultando APIs...");
+            $('#progBar').css('width', '40%');
 
             try {
-                const response = await fetch('https://busca-lead.onrender.com/buscar', {
+                const res = await fetch('http://127.0.0.1:8000/buscar', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ query: query, limit: limit })
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ query, limit: parseInt($('#limitSelect').val()) })
                 });
+                leads = await res.json();
+                
+                $('#progBar').css('width', '100%');
+                render(leads);
+                $('#containerTabela').removeClass('hidden');
+            } catch(e) { alert("Erro ao processar!"); }
 
-                const data = await response.json();
-
-                if (response.ok && Array.isArray(data)) {
-                    leadsAtuais = data;
-                    bar.style.width = "100%";
-                    percent.innerText = "100%";
-                    renderizarTabela();
-                    $('#tabelaContainer').removeClass('hidden');
-                } else {
-                    alert("Erro: " + (data.erro || "Falha no servidor"));
-                }
-            } catch (err) {
-                alert("Erro ao conectar com a API do Render.");
-            } finally {
-                btn.disabled = false;
-                btn.innerText = "INICIAR CONSULTA";
-                setTimeout(() => wrapper.classList.add('hidden'), 1000);
-            }
+            $('#btnBuscar').prop('disabled', false).text("INICIAR BUSCA");
         }
 
-        function renderizarTabela() {
-            table.clear();
-            leadsAtuais.forEach((lead, index) => {
-                let stars = `<div class="flex gap-0.5">`;
-                for(let i=1; i<=3; i++) {
-                    stars += `<span class="${i <= lead.score ? 'star-gold' : 'star-gray'}">★</span>`;
-                }
-                stars += `</div>`;
-
-                const cleanTel = lead.telefone.replace(/\D/g, '');
-                const zap = lead.telefone !== "N/A" ? `<a href="https://wa.me/55${cleanTel}" target="_blank" class="text-emerald-400 underline">${lead.telefone}</a>` : "N/A";
-                const site = lead.site ? `<a href="${lead.site}" target="_blank" class="text-blue-400">Visitar</a>` : "N/A";
-
-                table.row.add([
-                    stars,
-                    `<span class="text-white font-bold">${lead.nome}</span>`,
+        function render(data) {
+            dt.clear();
+            data.forEach(l => {
+                const zap = l.telefone !== "N/A" ? `<a href="https://wa.me/55${l.telefone.replace(/\D/g,'')}" target="_blank" class="text-emerald-400 font-bold underline">${l.telefone}</a>` : "N/A";
+                dt.row.add([
+                    `<span class="star-gold">${"★".repeat(l.score)}</span>`,
+                    `<span class="font-bold text-white">${l.nome}</span>`,
                     zap,
-                    site,
-                    lead.estado || "N/A",
-                    lead.email || "N/A",
-                    `<button onclick="removerLead(${index})" class="btn-trash text-red-500">Excluir</button>`
+                    `<span class="text-xs uppercase font-bold text-slate-500">${l.estado}</span>`,
+                    `<span class="text-blue-400 text-xs">${l.email}</span>`
                 ]);
             });
-            table.draw();
+            dt.draw();
         }
 
-        function removerLead(i) {
-            leadsAtuais.splice(i, 1);
-            renderizarTabela();
-        }
-
-        function exportarExcel() {
-            const ws = XLSX.utils.json_to_sheet(leadsAtuais);
+        function exportar() {
+            const ws = XLSX.utils.json_to_sheet(leads);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Leads");
-            XLSX.writeFile(wb, "Leads_Extraidos.xlsx");
+            XLSX.writeFile(wb, "leads_pro.xlsx");
         }
     </script>
 </body>
