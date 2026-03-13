@@ -143,4 +143,8 @@ async def api_buscar(request: BuscaRequest):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+    import os
+    # O Render passa a porta na variável de ambiente PORT
+    port = int(os.environ.get("PORT", 8000))
+    # O host DEVE ser 0.0.0.0 para ser acessível externamente
+    uvicorn.run(app, host="0.0.0.0", port=port)
