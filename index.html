@@ -4,81 +4,140 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Busca Leads</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+
     <style>
-        body { background-color: #0f172a; color: #f1f5f9; font-family: sans-serif; }
-        .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
-        .gradient-text { background: linear-gradient(90deg, #3b82f6, #2dd4bf); background-clip: text; -webkit-text-fill-color: transparent; }
-        table.dataTable tbody tr { background-color: #1e293b !important; color: #e2e8f0 !important; border-bottom: 1px solid #334155 !important; }
-        .dataTables_wrapper { color: #94a3b8 !important; }
-        .star-gold { color: #fbbf24; }
-        .star-gray { color: #334155; }
-        select option { background-color: #1e293b; color: white; }
+        body { 
+            background-color: #0b0f1a; 
+            color: #f1f5f9; 
+            font-family: 'Inter', sans-serif; 
+        }
+        .glass-card { 
+            background: rgba(17, 24, 39, 0.7); 
+            backdrop-filter: blur(12px); 
+            border: 1px solid rgba(255, 255, 255, 0.05); 
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+        .gradient-text { 
+            background: linear-gradient(90deg, #3b82f6, #2dd4bf); 
+            background-clip: text; 
+            -webkit-text-fill-color: transparent; 
+        }
         
-        /* Estilo da Lixeirinha */
-        .btn-trash { color: #64748b; transition: all 0.2s; cursor: pointer; display: flex; justify-content: center; }
-        .btn-trash:hover { color: #ef4444; transform: scale(1.1); }
+        /* Customização DataTables Dark */
+        .dataTables_wrapper .dataTables_length, .dataTables_wrapper .dataTables_filter, 
+        .dataTables_wrapper .dataTables_info, .dataTables_wrapper .dataTables_processing, 
+        .dataTables_wrapper .dataTables_paginate { color: #94a3b8 !important; }
+        
+        table.dataTable { border-collapse: collapse !important; border: none !important; }
+        table.dataTable tbody tr { background-color: transparent !important; color: #e2e8f0 !important; border-bottom: 1px solid #1e293b !important; }
+        table.dataTable thead th { background-color: #1e293b !important; color: #94a3b8 !important; text-transform: uppercase; font-size: 10px; letter-spacing: 0.05em; border: none !important; }
+        
+        .star-gold { color: #fbbf24; text-shadow: 0 0 10px rgba(251, 191, 36, 0.3); }
+        .star-gray { color: #2d3748; }
+        
+        /* Lixeira Animada */
+        .btn-trash { 
+            color: #4b5563; 
+            cursor: pointer; 
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+            display: flex; 
+            justify-content: center;
+        }
+        .btn-trash:hover { 
+            color: #ef4444; 
+            transform: scale(1.2) rotate(8deg); 
+        }
+
+        /* Barra de Progresso com Glow */
+        .progress-glow {
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
+            transition: width 0.5s ease-in-out;
+        }
+
+        input, select { transition: all 0.2s ease; }
+        input:focus { border-color: #3b82f6 !important; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
     </style>
 </head>
-<body class="p-4 md:p-10">
+<body class="p-6 md:p-12">
 
     <div class="max-w-6xl mx-auto">
-        <header class="flex justify-between items-center mb-8">
-            <h1 class="text-3xl font-black gradient-text">BUSCA LEADS</h1>
-            <button onclick="location.reload()" class="text-xs font-bold text-slate-500 border border-slate-800 px-4 py-2 rounded-lg hover:bg-slate-800">Reiniciar</button>
+        <header class="flex justify-between items-center mb-10">
+            <div>
+                <h1 class="text-4xl font-black gradient-text tracking-tighter">BUSCA LEADS</h1>
+                <p class="text-slate-500 text-sm font-medium">Extração Inteligente & Validação</p>
+            </div>
+            <button onclick="location.reload()" class="bg-slate-900 border border-slate-800 text-slate-400 hover:text-white px-4 py-2 rounded-xl text-xs font-bold transition-all">
+                PESQUISAR NOVAMENTE
+            </button>
         </header>
 
-        <div class="glass-card p-6 rounded-2xl mb-6">
-            <div class="flex flex-col md:flex-row gap-4 items-end">
-                <div class="flex-grow w-full">
-                    <label class="block text-xs font-bold text-slate-500 mb-2 uppercase">O que você busca?</label>
-                    <input type="text" id="searchInput" placeholder="Ex: Dentistas em São Paulo" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-white outline-none focus:ring-2 focus:ring-blue-500">
+        <div class="glass-card p-8 rounded-3xl mb-10">
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-end">
+                <div class="md:col-span-7">
+                    <label class="block text-[10px] font-bold text-slate-400 mb-3 uppercase tracking-widest">Atividade e Localização</label>
+                    <input type="text" id="searchInput" placeholder="Ex: Contabilidade em São Paulo" class="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-white outline-none">
                 </div>
-                <div class="w-full md:w-32">
-                    <label class="block text-xs font-bold text-slate-500 mb-2 uppercase">Qtd.</label>
-                    <select id="limitSelect" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-white outline-none">
+                <div class="md:col-span-2">
+                    <label class="block text-[10px] font-bold text-slate-400 mb-3 uppercase tracking-widest">Quantidade</label>
+                    <select id="limitSelect" class="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-white outline-none appearance-none">
+                        <option value="0">Selecione...</option>
                         <option value="10">10</option>
-                        <option value="20">20</option>
                         <option value="50">50</option>
                         <option value="100">100</option>
+                        <option value="200">200</option>
+                        <option value="1000">1000</option>
                     </select>
                 </div>
-                <button id="btnBuscar" onclick="buscarLeads()" class="w-full md:w-auto bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-10 rounded-xl transition-all shadow-lg active:scale-95">
-                    Extrair Leads
-                </button>
+                <div class="md:col-span-3">
+                    <button id="btnBuscar" onclick="buscarLeads()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-extrabold py-4 rounded-2xl transition-all shadow-lg shadow-blue-900/20 active:scale-95">
+                        INICIAR CONSULTA
+                    </button>
+                </div>
             </div>
 
-            <div id="progressWrapper" class="hidden mt-6">
-                <div class="flex justify-between text-[10px] font-bold text-blue-400 mb-2 uppercase">
-                    <span id="progressStatus">Iniciando robô...</span>
-                    <span id="progressPercent">0%</span>
+            <div id="progressWrapper" class="hidden mt-10 animate-fade-in">
+                <div class="flex justify-between items-end mb-3">
+                    <div class="flex flex-col">
+                        <span id="progressStatus" class="text-blue-400 text-[10px] font-bold uppercase tracking-widest mb-1">Iniciando Consulta...</span>
+                        <span class="text-slate-500 text-[9px]">Aguarde, Isso pode demorar um pouco</span>
+                    </div>
+                    <span id="progressPercent" class="text-2xl font-black text-white">0%</span>
                 </div>
-                <div class="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden border border-slate-700">
-                    <div id="progressBar" class="bg-blue-500 h-full w-0 transition-all duration-300 shadow-[0_0_8px_#3b82f6]"></div>
+                <div class="w-full bg-slate-950 rounded-full h-3 p-1 border border-slate-800">
+                    <div id="progressBar" class="progress-glow bg-blue-500 h-full rounded-full w-0"></div>
                 </div>
             </div>
         </div>
 
-        <div class="glass-card rounded-2xl overflow-hidden hidden" id="tabelaContainer">
-            <div class="p-5 border-b border-slate-700 flex justify-between items-center bg-slate-800/30">
-                <h2 class="font-bold">Resultados Qualificados</h2>
-                <button onclick="exportarExcel()" class="bg-emerald-600 text-white py-2 px-5 rounded-lg text-sm font-bold hover:bg-emerald-500">Exportar Excel</button>
+        <div class="glass-card rounded-3xl overflow-hidden hidden" id="tabelaContainer">
+            <div class="p-6 border-b border-slate-800 flex justify-between items-center bg-slate-900/30">
+                <h2 class="font-bold text-slate-200 flex items-center gap-2">
+                    <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+                    Leads Qualificados
+                </h2>
+                <button onclick="exportarExcel()" class="bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 px-6 rounded-xl text-xs font-bold transition-all flex items-center gap-2">
+                    EXPORTAR PARA EXCEL
+                </button>
             </div>
-            <div class="p-4">
+            <div class="p-6">
                 <table id="tabelaLeads" class="display w-full">
                     <thead>
-                        <tr>
-                            <th class="text-left">Score</th>
-                            <th class="text-left">Empresa</th>
-                            <th class="text-left">WhatsApp</th>
-                            <th class="text-left">E-mail</th>
-                            <th class="text-left">Site</th>
-                            <th class="text-center">Ações</th>
-                        </tr>
+                    <tr>
+                        <th>Qualidade</th>
+                        <th>Empresa</th>
+                        <th>WhatsApp</th>
+                        <th>Site</th> 
+                        <th>UF</th>
+                        <th>E-mail</th>
+                        <th class="text-center">Ações</th>
+                    </tr>
                     </thead>
                     <tbody></tbody>
                 </table>
@@ -89,14 +148,15 @@
     <script>
         let table = $('#tabelaLeads').DataTable({
             language: { url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/pt-BR.json' },
-            order: [[0, 'desc']]
+            order: [[0, 'desc']],
+            pageLength: 25
         });
         let leadsAtuais = [];
 
         async function buscarLeads() {
             const query = document.getElementById('searchInput').value;
             const limit = parseInt(document.getElementById('limitSelect').value);
-            if(!query) return alert("Por favor, digite o nicho e a cidade.");
+            if(!query) return alert("Digite o nicho desejado!");
 
             const btn = document.getElementById('btnBuscar');
             const wrapper = document.getElementById('progressWrapper');
@@ -104,21 +164,27 @@
             const status = document.getElementById('progressStatus');
             const percent = document.getElementById('progressPercent');
 
+            // UI Reset
             btn.disabled = true;
+            btn.innerText = "BUSCANDO...";
             wrapper.classList.remove('hidden');
             $('#tabelaContainer').addClass('hidden');
 
-            // Lógica da Barra de Progresso (Tempo estimado)
-            let current = 0;
+            // Lógica de Progresso Estimado (Adaptado para 1000 leads)
+            let progressoReal = 0;
+            const incremento = 100 / (limit * 2.5); // Ajuste de velocidade
             const timer = setInterval(() => {
-                if(current < 95) {
-                    current += (100 / (limit * 1.8)); // Velocidade proporcional ao limite
-                    if(current > 95) current = 95;
-                    bar.style.width = current + "%";
-                    percent.innerText = Math.floor(current) + "%";
-                    status.innerText = current < 30 ? "Consultando Servidores..." : "Extraindo dados das empresas...";
+                if(progressoReal < 98) {
+                    progressoReal += incremento;
+                    bar.style.width = progressoReal + "%";
+                    percent.innerText = Math.floor(progressoReal) + "%";
+                    
+                    if(progressoReal < 15) status.innerText = "Configurando Busca no Servidor...";
+                    else if(progressoReal < 40) status.innerText = "Navegando API...";
+                    else if(progressoReal < 80) status.innerText = `Extraindo contatos (${Math.floor(progressoReal)}%)...`;
+                    else status.innerText = "Consultando ...";
                 }
-            }, 500);
+            }, 800);
 
             try {
                 const response = await fetch('http://127.0.0.1:8000/buscar', {
@@ -126,66 +192,85 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ query: query, limit: limit })
                 });
+
                 leadsAtuais = await response.json();
                 
+                // Finaliza barra
                 clearInterval(timer);
                 bar.style.width = "100%";
                 percent.innerText = "100%";
-                status.innerText = "Concluído com sucesso!";
+                status.innerText = "Extração Finalizada!";
 
                 setTimeout(() => {
                     renderizarTabela();
                     wrapper.classList.add('hidden');
-                    $('#tabelaContainer').hide().removeClass('hidden').fadeIn();
+                    $('#tabelaContainer').hide().removeClass('hidden').fadeIn(1000);
                     btn.disabled = false;
-                }, 600);
+                    btn.innerText = "INICIAR CONSULTA";
+                }, 800);
 
             } catch (err) {
                 clearInterval(timer);
-                alert("Erro ao conectar com o servidor Python.");
+                alert("Erro ao conectar com o Backend Python. Verifique se o servidor está rodando.");
                 btn.disabled = false;
+                btn.innerText = "INICIAR EXTRAÇÃO";
             }
         }
 
         function renderizarTabela() {
-            table.clear();
-            leadsAtuais.forEach((lead, index) => {
-                let stars = `<span class="hidden">${lead.score}</span><div class="flex gap-1">`;
-                for(let i=1; i<=3; i++) {
-                    stars += `<span class="${i <= lead.score ? 'star-gold' : 'star-gray'} text-lg">★</span>`;
-                }
-                stars += `</div>`;
-
-                const cleanTel = lead.telefone.replace(/\D/g, '');
-                const zap = lead.telefone !== "N/A" ? `<a href="https://wa.me/55${cleanTel}" target="_blank" class="text-emerald-400 font-bold hover:underline">${lead.telefone}</a>` : "N/A";
-
-                table.row.add([
-                    stars,
-                    `<span class="text-white font-bold">${lead.nome}</span>`,
-                    zap,
-                    `<span class="text-blue-300 text-xs">${lead.email}</span>`,
-                    lead.site ? `<a href="${lead.site}" target="_blank" class="text-slate-400 underline text-xs hover:text-white">Visitar</a>` : "N/A",
-                    `<div class="btn-trash" onclick="removerLead(${index})">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                    </div>`
-                ]);
-            });
-            table.draw();
+    table.clear();
+    leadsAtuais.forEach((lead, index) => {
+        // Estrelas de Score
+        let stars = `<span class="hidden">${lead.score}</span><div class="flex gap-0.5">`;
+        for(let i=1; i<=3; i++) {
+            stars += `<span class="${i <= lead.score ? 'star-gold' : 'star-gray'} text-lg">★</span>`;
         }
+        stars += `</div>`;
+
+        // Link WhatsApp
+        const cleanTel = lead.telefone.replace(/\D/g, '');
+        const zap = lead.telefone !== "N/A" ? 
+            `<a href="https://wa.me/55${cleanTel}" target="_blank" class="text-emerald-400 font-bold hover:text-emerald-300 transition-colors">${lead.telefone}</a>` : 
+            `<span class="text-slate-600 italic">Sem número</span>`;
+
+        // Link do Site (Coluna Específica)
+        const siteLink = lead.site ? 
+            `<a href="${lead.site}" target="_blank" class="text-blue-400 hover:text-blue-300 flex items-center gap-1 text-xs font-medium">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                Visitar Site
+            </a>` : 
+            `<span class="text-slate-600 italic text-[10px]">N/A</span>`;
+
+        table.row.add([
+            stars,
+            `<div class="text-white font-bold text-sm">${lead.nome}</div>`, // Apenas o nome aqui
+            zap,
+            siteLink, // Nova coluna com link clicável
+            `<span class="bg-slate-800 text-slate-300 px-2 py-1 rounded text-[10px] font-bold border border-slate-700">${lead.estado || 'N/A'}</span>`,
+            `<span class="text-blue-300 text-xs">${lead.email}</span>`,
+            `<div class="btn-trash" onclick="removerLead(${index})">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+            </div>`
+        ]);
+    });
+    table.draw();
+}
 
         function removerLead(i) {
-            leadsAtuais.splice(i, 1);
-            renderizarTabela();
+            if(confirm("Deseja excluir este lead da lista atual?")) {
+                leadsAtuais.splice(i, 1);
+                renderizarTabela();
+            }
         }
 
         function exportarExcel() {
-            if(!leadsAtuais.length) return;
+            if(leadsAtuais.length === 0) return alert("Não há dados para exportar.");
             const ws = XLSX.utils.json_to_sheet(leadsAtuais);
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Leads");
-            XLSX.writeFile(wb, "Leads_Extraidos.xlsx");
+            XLSX.utils.book_append_sheet(wb, ws, "Leads Extraídos");
+            XLSX.writeFile(wb, "Lead_Search_Pro_Results.xlsx");
         }
     </script>
 </body>
