@@ -6,6 +6,18 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from playwright.async_api import async_playwright
+from fastapi.middleware.cors import CORSMiddleware
+
+app = FastAPI()
+
+# Configuração de CORS Ultra-Permissiva para evitar bloqueios
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Permite qualquer origem (inclusive seu github.io)
+    allow_credentials=True,
+    allow_methods=["*"],  # Permite POST, GET, etc.
+    allow_headers=["*"],  # Permite todos os cabeçalhos
+)
 
 if sys.platform == 'win32':
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
