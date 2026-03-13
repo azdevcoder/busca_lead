@@ -153,16 +153,54 @@
         });
         let leadsAtuais = [];
 
-        async function buscarLeads() {
-            const query = document.getElementById('searchInput').value;
-            const limit = parseInt(document.getElementById('limitSelect').value);
-            if(!query) return alert("Digite o nicho desejado!");
+       async function buscarLeads() {
+    const query = document.getElementById('searchInput').value;
+    const limit = parseInt(document.getElementById('limitSelect').value);
+    if(!query) return alert("Digite o nicho desejado!");
 
-            const btn = document.getElementById('btnBuscar');
-            const wrapper = document.getElementById('progressWrapper');
-            const bar = document.getElementById('progressBar');
-            const status = document.getElementById('progressStatus');
-            const percent = document.getElementById('progressPercent');
+    const btn = document.getElementById('btnBuscar');
+    const wrapper = document.getElementById('progressWrapper');
+    const bar = document.getElementById('progressBar');
+    
+    btn.disabled = true;
+    btn.innerText = "BUSCANDO...";
+    wrapper.classList.remove('hidden');
+
+    try {
+        const response = await fetch('https://busca-lead.onrender.com/buscar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query: query, limit: limit })
+        });
+
+        const data = await response.json();
+
+        // VERIFICAÇÃO CRÍTICA:
+        if (response.ok && Array.isArray(data)) {
+            leadsAtuais = data;
+            bar.style.width = "100%";
+            setTimeout(() => {
+                renderizarTabela();
+                wrapper.classList.add('hidden');
+                $('#tabelaContainer').hide().removeClass('hidden').fadeIn(1000);
+                btn.disabled = false;
+                btn.innerText = "INICIAR CONSULTA";
+            }, 800);
+        } else {
+            // Se o servidor mandou erro 500 ou mensagem de erro
+            console.error("Erro do Servidor:", data);
+            alert("Erro no servidor: " + (data.erro || "Ocorreu uma falha na extração. Verifique os logs do Render."));
+            btn.disabled = false;
+            btn.innerText = "INICIAR CONSULTA";
+        }
+
+    } catch (err) {
+        console.error("Erro de conexão:", err);
+        alert("Erro ao conectar com o servidor.");
+        btn.disabled = false;
+        btn.innerText = "INICIAR CONSULTA";
+    }
+}
 
             // UI Reset
             btn.disabled = true;
