@@ -51,10 +51,19 @@ async def encontrar_email_no_site(session, url):
 async def scraper_maps_ultra(keyword: str, limit: int):
     leads_extraidos = []
     async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True)
-        context = await browser.new_context(user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
-        page = await context.new_page()
-        await page.route("**/*.{png,jpg,jpeg,svg,css}", lambda route: route.abort())
+        # Adicionamos argumentos para economizar MUITA memória
+        browser = await p.chromium.launch(
+            headless=True,
+            args=[
+                "--disable-gpu",
+                "--disable-dev-shm-usage",
+                "--no-sandbox",
+                "--disable-setuid-sandbox",
+                "--no-first-run",
+                "--no-zygote",
+                "--single-process", # Crucial para o plano free do Render
+            ]
+        )
 
         await page.goto(f"https://www.google.com.br/maps/search/{keyword.replace(' ', '+')}", wait_until="networkidle")
         
