@@ -32,18 +32,15 @@ async def encontrar_email_no_site(session, url):
 async def scraper_maps_ultra(keyword: str, limit: int):
     leads_preliminares = []
     async with async_playwright() as p:
+        # No extrator.py, mude para:
         browser = await p.chromium.launch(headless=True)
         context = await browser.new_context(user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0")
         page = await context.new_page()
-        
-        # Bloqueia imagens para ganhar velocidade
         await page.route("**/*.{png,jpg,jpeg,svg}", lambda route: route.abort())
 
         await page.goto(f"https://www.google.com.br/maps/search/{keyword.replace(' ', '+')}")
         try:
             await page.wait_for_selector('a.hfpxzc', timeout=10000)
-            
-            # Scroll para carregar a lista
             scroll_container = 'div[role="feed"]'
             for _ in range((limit // 5) + 1):
                 elementos = await page.locator('a.hfpxzc').all()
@@ -55,50 +52,37 @@ async def scraper_maps_ultra(keyword: str, limit: int):
             for i in range(min(limit, len(elementos))):
                 try:
                     await elementos[i].click()
-                    await asyncio.sleep(0.7) # Delay otimizado
-                    
+                    await asyncio.sleep(0.7)
                     nome = await elementos[i].get_attribute('aria-label')
-                    
-                    # Telefone
                     tel_btn = page.locator('button[data-tooltip="Copiar número de telefone"]')
                     telefone = await tel_btn.first.get_attribute('aria-label') if await tel_btn.count() > 0 else "N/A"
                     telefone = telefone.replace("Telefone: ", "").strip()
-
-                    # Website (Limpeza rigorosa do redirecionamento do Google)
+                    
                     site_link = page.locator('a[data-tooltip="Abrir website"]')
                     url_site = None
                     if await site_link.count() > 0:
                         raw_url = await site_link.first.get_attribute('href')
-                        if "url?q=" in raw_url:
-                            url_site = raw_url.split("url?q=")[1].split("&")[0]
-                        else:
-                            url_site = raw_url
+                        url_site = raw_url.split("url?q=")[1].split("&")[0] if "url?q=" in raw_url else raw_url
                     
                     leads_preliminares.append({"nome": nome, "telefone": telefone, "site": url_site})
                 except: continue
         except: pass
         await browser.close()
 
-    # Enriquecimento com Emails
     leads_finais = []
     async with aiohttp.ClientSession(headers={"User-Agent": "Mozilla/5.0"}) as session:
         tarefas = [encontrar_email_no_site(session, item['site']) for item in leads_preliminares]
         emails = await asyncio.gather(*tarefas)
-        
         for i, email in enumerate(emails):
             lead = leads_preliminares[i]
             lead['email'] = email
-            
-            # Cálculo de Score
             score = 0
             if lead['telefone'] != "N/A" and len(lead['telefone']) > 5: score += 1
             if lead['site'] and len(lead['site']) > 5: score += 1
             if "@" in lead['email']: score += 1
-
-            if score > 0: # Ignorar leads totalmente vazios
+            if score > 0:
                 lead['score'] = score
                 leads_finais.append(lead)
-            
     return sorted(leads_finais, key=lambda x: x['score'], reverse=True)
 
 @app.post("/buscar")
