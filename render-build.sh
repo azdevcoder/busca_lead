@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
-# exit on error
+# Sair se houver erro
 set -o errexit
 
+# Atualiza o pip e instala as dependências do Python
+pip install --upgrade pip
 pip install -r requirements.txt
-playwright install --with-deps chromium
+
+# Instala o binário do Chromium (SEM o comando --with-deps que pede root)
+playwright install chromium
